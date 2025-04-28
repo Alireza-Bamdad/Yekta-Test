@@ -1,0 +1,58 @@
+.admin-container {
+    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+}
+
+.admin-form {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.admin-form input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+button {
+    padding: 12px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.questions-list {
+    background-color: #f1f1f1;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.question-card {
+    padding: 10px;
+    background-color: #e9e9e9;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+button {
+    margin-top: 10px;
+}
+
+.question-card img,
+.question-card video {
+    width: 100%;
+    max-width: 200px;
+    margin-top: 10px;
+}

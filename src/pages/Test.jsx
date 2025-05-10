@@ -1,5 +1,5 @@
 import Navbar from "../components/Navbar/Navbar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Test.css";
 
 function Test({ questions }) {
@@ -7,9 +7,17 @@ function Test({ questions }) {
     const [answers, setAnswers] = useState({});
     const [result, setResult] = useState(null);
     const [showResult, setShowResult] = useState(false);
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     const currentAnswer = answers[currentQuestionIndex];
     const isAnswered = currentAnswer !== undefined;
+
+    
+ 
+    useEffect(() => {
+        // اسکرول به بالای صفحه هنگام تغییر سوال
+        window.scrollTo(0, 0);
+    }, [currentQuestionIndex, showResult]);
 
     const handleAnswerChange = (score) => {
         setAnswers({
@@ -20,16 +28,31 @@ function Test({ questions }) {
 
     const nextQuestion = () => {
         if (isAnswered) {
-            if (currentQuestionIndex < questions.length - 1) {
-                setCurrentQuestionIndex(currentQuestionIndex + 1);
-            } else {
-                calculateResult();
-                setShowResult(true);
-            }
+            setIsTransitioning(true);
+            setTimeout(() => {
+                if (currentQuestionIndex < questions.length - 1) {
+                    setCurrentQuestionIndex(currentQuestionIndex + 1);
+                } else {
+                    calculateResult();
+                    setShowResult(true);
+                }
+                setIsTransitioning(false);
+            }, 300);
         } else {
             alert("لطفاً به این سوال جواب دهید.");
         }
     };
+
+    const previousQuestion = () => {
+        if (currentQuestionIndex > 0) {
+            setIsTransitioning(true);
+            setTimeout(() => {
+                setCurrentQuestionIndex(currentQuestionIndex - 1);
+                setIsTransitioning(false);
+            }, 300);
+        }
+    };
+
     const calculateResult = () => {
         // دسته‌بندی سوالات
         const categories = {
@@ -53,12 +76,15 @@ function Test({ questions }) {
         const categoryResults = {};
         Object.entries(categoryScores).forEach(([category, score]) => {
             const maxScore = categories[category].length * 5;
-            const result = score >= maxScore * 0.8 ? "قوی" :
-                          score >= maxScore * 0.5 ? "متوسط" : 
+            const percentScore = (score / maxScore) * 100;
+            const result = percentScore >= 80 ? "قوی" :
+                          percentScore >= 50 ? "متوسط" : 
                           "ضعیف";
     
             categoryResults[category] = {
                 score,
+                maxScore,
+                percentScore,
                 result,
                 interpretation: getCategoryInterpretation(category, result)
             };
@@ -103,98 +129,108 @@ function Test({ questions }) {
     
         return categoryInterpretations[category][result];
     };
-    
-    
 
     const restartTest = () => {
-        setAnswers({});
-        setCurrentQuestionIndex(0);
-        setResult(null);
-        setShowResult(false);
+        setIsTransitioning(true);
+        setTimeout(() => {
+            setAnswers({});
+            setCurrentQuestionIndex(0);
+            setResult(null);
+            setShowResult(false);
+            setIsTransitioning(false);
+        }, 300);
     };
+
+    // ایجاد نوار پیشرفت
+    const progressPercentage = ((currentQuestionIndex + 1) / questions.length) * 100;
 
     return (
         <div className="test-container">
-            <Navbar />
-            {showResult ? (
-    <div className="result-container">
-        <h2>نتیجه آزمون توانمندی‌های منش (VIA-IS)</h2>
-        {Object.entries(result).map(([category, { score, result, interpretation }]) => (
-            <div key={category} className="category-result">
-                <h3>{category}</h3>
-                <p>{interpretation}</p>
-                <p>امتیاز: {score}</p>
-                {result === "قوی" && (
-                    <p>شما این خصوصیت را به خوبی دارید. افراد معروفی مانند [افراد معروف] این ویژگی را دارند.</p>
-                )}
-                {result === "ضعیف" && (
-                    <p>شما می‌توانید روی تقویت این خصوصیت کار کنید. شغل‌هایی مانند [شغل‌های مناسب] برای شما مناسب خواهند بود.</p>
+            <div className={`content-wrapper ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
+                {showResult ? (
+                    <div className="result-container">
+                        <h2>نتیجه آزمون یکتا</h2>
+                        <p className="result-description">
+                            این آزمون بر اساس مدل روانشناسی مثبت‌گرا، توانمندی‌های منش شما را در شش دسته اصلی ارزیابی می‌کند.
+                        </p>
+                        
+                        <div className="result-summary">
+                            {Object.entries(result).map(([category, { score, maxScore, percentScore, result: categoryResult, interpretation }]) => (
+                                <div key={category} className={`category-result ${categoryResult.toLowerCase()}`}>
+                                    <h3>{category}</h3>
+                                    <div className="score-bar-container">
+                                        <div className="score-bar" style={{ width: `${percentScore}%` }}></div>
+                                        <span className="score-percentage">{Math.round(percentScore)}%</span>
+                                    </div>
+                                    <p className="interpretation">{interpretation}</p>
+                                    
+                                    {categoryResult === "قوی" }
+                                    
+                                    {categoryResult === "ضعیف" }
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="action-buttons">
+                            <button className="primary-button" onClick={restartTest}>
+                                انجام مجدد آزمون
+                            </button>
+                            <button className="secondary-button" onClick={() => window.print()}>
+                                چاپ نتایج
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="question-container">
+                        <div className="progress-container">
+                            <div className="progress-bar">
+                                <div className="progress-fill" style={{ width: `${progressPercentage}%` }}></div>
+                            </div>
+                            <div className="progress-info">
+                                <span>سوال {currentQuestionIndex + 1} از {questions.length}</span>
+                                <span>{Math.round(progressPercentage)}%</span>
+                            </div>
+                        </div>
+
+                        <div className="question-content">
+                            <h3 className="question-text">{questions[currentQuestionIndex].text}</h3>
+                            
+                            <div className="options">
+                                {[
+                                    { value: 5, label: "کاملاً شبیه من" },
+                                    { value: 4, label: "شبیه من" },
+                                    { value: 3, label: "نظری ندارم" },
+                                    { value: 2, label: "برعکس من" },
+                                    { value: 1, label: "کاملاً برعکس من" }
+                                ].map((option) => (
+                                    <label key={option.value} className={`option-label ${currentAnswer === option.value ? 'selected' : ''}`}>
+                                        <input 
+                                            type="radio" 
+                                            name={`question-${currentQuestionIndex}`}
+                                            value={option.value} 
+                                            checked={currentAnswer === option.value}
+                                            onChange={() => handleAnswerChange(option.value)} 
+                                        />
+                                        <span className="radio-custom"></span>
+                                        <span className="option-text">{option.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="navigation-buttons">
+                            {currentQuestionIndex > 0 && (
+                                <button className="secondary-button" onClick={previousQuestion}>
+                                    قبلی
+                                </button>
+                            )}
+                            <button className="primary-button" onClick={nextQuestion}>
+                                {currentQuestionIndex < questions.length - 1 ? "بعدی" : "مشاهده نتایج"}
+                            </button>
+                        </div>
+                    </div>
                 )}
             </div>
-        ))}
-        <button className="restart-button" onClick={restartTest}>
-            انجام مجدد آزمون
-        </button>
-    </div>
-) : (
-    <div className="question-container">
-        <div className="progress-info">
-            سوال {currentQuestionIndex + 1} از {questions.length}
-        </div>
-        <h3>{questions[currentQuestionIndex].text}</h3>
-        <div className="options">
-            <label>
-                <input 
-                    type="radio" 
-                    name={`question-${currentQuestionIndex}`}
-                    value={5} 
-                    checked={currentAnswer === 5}
-                    onChange={() => handleAnswerChange(5)} 
-                /> کاملاً شبیه من
-            </label>
-            <label>
-                <input 
-                    type="radio" 
-                    name={`question-${currentQuestionIndex}`}
-                    value={4} 
-                    checked={currentAnswer === 4}
-                    onChange={() => handleAnswerChange(4)} 
-                /> شبیه من
-            </label>
-            <label>
-                <input 
-                    type="radio" 
-                    name={`question-${currentQuestionIndex}`}
-                    value={3} 
-                    checked={currentAnswer === 3}
-                    onChange={() => handleAnswerChange(3)} 
-                /> نظری ندارم
-            </label>
-            <label>
-                <input 
-                    type="radio" 
-                    name={`question-${currentQuestionIndex}`}
-                    value={2} 
-                    checked={currentAnswer === 2}
-                    onChange={() => handleAnswerChange(2)} 
-                /> برعکس من
-            </label>
-            <label>
-                <input 
-                    type="radio" 
-                    name={`question-${currentQuestionIndex}`}
-                    value={1} 
-                    checked={currentAnswer === 1}
-                    onChange={() => handleAnswerChange(1)} 
-                /> کاملاً برعکس من
-            </label>
-        </div>
-        <button className="next-button" onClick={nextQuestion}>
-            {currentQuestionIndex < questions.length - 1 ? "بعدی" : "پایان آزمون"}
-        </button>
-    </div>
-)}
-
         </div>
     );
 }

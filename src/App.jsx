@@ -1,4 +1,5 @@
 import './App.css';
+import Navbar from './components/Navbar/Navbar';
 import {Routes, Route } from "react-router-dom";
 import { useState } from 'react';
 
@@ -38,6 +39,7 @@ function App() {
 
   return (
     <div className='container'>
+      <Navbar />
       <Routes>
         <Route path='/' element={<Test questions={questions} setQuestions={setQuestions} />} />
         <Route path='/Admin' element={<Admin questions={questions} setQuestions={setQuestions} />} />
